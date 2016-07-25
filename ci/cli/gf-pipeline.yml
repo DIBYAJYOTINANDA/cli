@@ -1,0 +1,106 @@
+---
+resources:
+- name: cli-gf
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cli
+    private_key: {{cf-cli-eng-github-private-key}}
+    branch: goflags-introduction
+    ignore_paths:
+    - ci
+
+- name: cli-private
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cli-private
+    private_key: {{cf-cli-eng-github-private-key}}
+    branch: master
+
+- name: cli-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cli
+    private_key: {{cf-cli-eng-github-private-key}}
+    branch: master
+    paths:
+    - ci
+
+- name: cf-cli-binaries
+  type: s3
+  source:
+    bucket: goflags-cli-binaries
+    access_key_id: {{cli-ci-s3-admin-key-id}}
+    secret_access_key: {{cli-ci-s3-admin-secret-key}}
+    versioned_file: cf-cli-binaries.tgz
+
+- name: cf-cli-tracker
+  type: tracker
+  source:
+    token: {{cf-cli-public-tracker-token}}
+    project_id: {{cf-cli-public-tracker-project-id}}
+    tracker_url: https://www.pivotaltracker.com
+
+groups:
+- name: goflags-cli
+  jobs:
+  - units-gf
+  - build-binaries-gf
+  - publish-edge-archives-gf
+
+jobs:
+- name: units-gf
+  serial: true
+  plan:
+  - aggregate:
+    - get: cli-gf
+      trigger: true
+    - get: cli-ci
+  - aggregate:
+    - task: units-linux
+      file: cli-ci/ci/cli/tasks/units-linux.yml
+    - task: units-osx
+      file: cli-ci/ci/cli/tasks/units-osx.yml
+    - task: units-windows
+      file: cli-ci/ci/cli/tasks/units-windows.yml
+    - task: lint
+      file: cli-ci/ci/cli/tasks/lint.yml
+
+- name: build-binaries-gf
+  serial: true
+  plan:
+  - aggregate:
+    - get: cli-gf
+      trigger: true
+      passed: [units-gf]
+    - get: cli-ci
+  - aggregate:
+    - task: build
+      file: cli-ci/ci/cli/tasks/build-binaries.yml
+    - task: build-osx
+      file: cli-ci/ci/cli/tasks/build-osx-binary.yml
+  - task: combine-binaries
+    file: cli-ci/ci/cli/tasks/combine-binaries.yml
+  - put: cf-cli-binaries
+    params:
+      file: compiled/cf-cli-binaries.tgz
+
+- name: publish-edge-archives-gf
+  serial: true
+  plan:
+  - aggregate:
+    - get: cli-gf
+      passed: [build-binaries-gf]
+    - get: cf-cli-binaries
+      trigger: true
+      passed: [build-binaries-gf]
+    - get: cli-ci
+  - task: publish-binaries
+    file: cli-ci/ci/cli/tasks/publish-edge-binaries.yml
+    params:
+      AWS_ACCESS_KEY_ID: {{cli-ci-s3-admin-key-id}}
+      AWS_SECRET_ACCESS_KEY: {{cli-ci-s3-admin-secret-key}}
+      PUBLISH_TO_S3_DIR: goflags-cli-binaries
+  - put: cf-cli-tracker
+    params:
+      repos:
+      - cli
