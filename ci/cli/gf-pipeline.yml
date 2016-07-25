@@ -1,6 +1,6 @@
 ---
 resources:
-- name: cli-gf
+- name: cli
   type: git
   source:
     uri: git@github.com:cloudfoundry/cli
@@ -9,21 +9,21 @@ resources:
     ignore_paths:
     - ci
 
+- name: cli-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/cli
+    private_key: {{cf-cli-eng-github-private-key}}
+    branch: goflags-introduction
+    paths:
+    - ci
+
 - name: cli-private
   type: git
   source:
     uri: git@github.com:cloudfoundry/cli-private
     private_key: {{cf-cli-eng-github-private-key}}
     branch: master
-
-- name: cli-ci
-  type: git
-  source:
-    uri: git@github.com:cloudfoundry/cli
-    private_key: {{cf-cli-eng-github-private-key}}
-    branch: master
-    paths:
-    - ci
 
 - name: cf-cli-binaries
   type: s3
@@ -52,7 +52,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: cli-gf
+    - get: cli
       trigger: true
     - get: cli-ci
   - aggregate:
@@ -69,7 +69,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: cli-gf
+    - get: cli
       trigger: true
       passed: [units-gf]
     - get: cli-ci
@@ -88,7 +88,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
-    - get: cli-gf
+    - get: cli
       passed: [build-binaries-gf]
     - get: cf-cli-binaries
       trigger: true
