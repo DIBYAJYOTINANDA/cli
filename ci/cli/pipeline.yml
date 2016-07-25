@@ -439,16 +439,28 @@ jobs:
     - get: cf-cli-installer-win64
       passed: [create-installers]
     - get: cli-ci
-  - task: publish
-    file: cli-ci/ci/cli/tasks/publish-edge-archives.yml
+  - task: publish-binaries
+    file: cli-ci/ci/cli/tasks/publish-edge-binaries.yml
     params:
       AWS_ACCESS_KEY_ID: {{release-bucket-access-key-id}}
       AWS_SECRET_ACCESS_KEY: {{release-bucket-secret-access-key}}
+      PUBLISH_TO_S3_DIR: go-cli/master
     on_failure:
        put: slack-alert
        params:
          channel: '#cli-firehose'
-         text: "publish edge archives failed OR errored :("
+         text: "publish edge binaries failed OR errored :("
+  - task: publish-installers
+    file: cli-ci/ci/cli/tasks/publish-edge-installers.yml
+    params:
+      AWS_ACCESS_KEY_ID: {{release-bucket-access-key-id}}
+      AWS_SECRET_ACCESS_KEY: {{release-bucket-secret-access-key}}
+      PUBLISH_TO_S3_DIR: go-cli/master
+    on_failure:
+       put: slack-alert
+       params:
+         channel: '#cli-firehose'
+         text: "publish edge installers failed OR errored :("
   - put: cf-cli-tracker
     params:
       repos:

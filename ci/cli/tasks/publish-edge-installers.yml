@@ -1,0 +1,43 @@
+---
+platform: linux
+image: docker:///cloudfoundry/cli-ci
+
+params:
+  AWS_ACCESS_KEY_ID:
+  AWS_SECRET_ACCESS_KEY:
+  PUBLISH_TO_S3_DIR:
+
+inputs:
+- name: cli
+- name: cf-cli-installers
+- name: cf-cli-installer-win32
+- name: cf-cli-installer-win64
+
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    set -ex
+
+    root=$PWD
+
+    mkdir installers
+
+    filename_regex="cf-cli(-installer)?([-_0-9a-z]+)?(\.[a-z]+)?"
+
+    pushd cf-cli-installers
+      tar xvzf cf-cli-installers.tgz -C $root/installers
+    popd
+
+    mv cf-cli-installer-win32/cf-cli-installer_win32.zip installers
+    mv cf-cli-installer-win64/cf-cli-installer_winx64.zip installers
+
+    pushd installers
+      for installer in *; do
+        [[ "${installer}" =~ $filename_regex ]]
+        os_arch="${BASH_REMATCH[2]}"
+        extension="${BASH_REMATCH[3]}"
+        aws s3 cp $installer s3://${PUBLISH_TO_S3_DIR}/cf-cli-installer_edge${os_arch}${extension}
+      done
+    popd
