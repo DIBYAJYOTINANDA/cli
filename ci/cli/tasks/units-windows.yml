@@ -2,7 +2,7 @@
 platform: windows
 
 inputs:
-- name: cli
+- name: cli-ci
   path: gopath/src/code.cloudfoundry.org/cli
 
 run:
