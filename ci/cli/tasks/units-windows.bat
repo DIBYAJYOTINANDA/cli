@@ -6,5 +6,6 @@ cd %GOPATH%\src\code.cloudfoundry.org\cli
 powershell -command set-executionpolicy remotesigned
 
 go get github.com/onsi/ginkgo/ginkgo
+go get github.com/onsi/gomega
 
 ginkgo -r -randomizeAllSpecs -randomizeSuites .
