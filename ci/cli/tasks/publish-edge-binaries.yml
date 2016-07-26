@@ -31,7 +31,7 @@ run:
 
       for BIN in cf-cli_[lo]*; do # linux, osx
         [[ "${BIN}" =~ $filename_regex ]]
-        os_arch="${BASH_REMATCH[2]}"
+        os_arch="${BASH_REMATCH[1]}"
 
         cp ${BIN} cf
         tar cvzf $root/archives/cf-cli_edge${os_arch}.tgz cf
@@ -40,7 +40,7 @@ run:
 
       for BIN in cf-cli_win*; do
         [[ "${BIN}" =~ $filename_regex ]]
-        os_arch="${BASH_REMATCH[2]}"
+        os_arch="${BASH_REMATCH[1]}"
 
         cp ${BIN} cf.exe
         zip $root/archives/cf-cli_edge${os_arch}.zip cf.exe
