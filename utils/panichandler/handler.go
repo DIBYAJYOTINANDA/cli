@@ -37,7 +37,7 @@ func HandlePanic() {
 		Error
 		{{.Error}}
 
-		StackTrace
+		Stack Trace
 {{.StackTrace}}
 
 		Your Platform Details
